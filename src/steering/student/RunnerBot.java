@@ -52,7 +52,7 @@ public class RunnerBot extends Robot {
         taggedTimer = Math.max(0, taggedTimer - world.getSecs());
 
         final var blend = new Blend(this)
-            .add(Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("sheepAvoid"));
+            .add("Obstacle Avoidance", Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("sheepAvoid"));
 
         scared = false;
         for (var other : world.getNeighbors()) {
@@ -61,11 +61,11 @@ public class RunnerBot extends Robot {
             final var evade = Behaviors.evade(this, hunter, PANIC_RADIUS);
             if (!isZero(evade)) {
                 scared = true;
-                blend.add(evade, weights.get("evade"));
+                blend.add("Evade", evade, weights.get("evade"));
             }
         }
-        blend.add(Behaviors.separation(this, world.getNeighbors(60), 60), weights.get("separation"));
-        if (!scared) blend.add(wander.calculate(this, world.getSecs()), weights.get("wander"));
+        blend.add("Separation", Behaviors.separation(this, world.getNeighbors(60), 60), weights.get("separation"));
+        if (!scared) blend.add("Wander", wander.calculate(this, world.getSecs()), weights.get("wander"));
         return blend.result();
     }
 

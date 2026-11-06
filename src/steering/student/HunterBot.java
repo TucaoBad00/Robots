@@ -45,8 +45,8 @@ public class HunterBot extends Robot {
             ? wander.calculate(this, world.getSecs())
             : Behaviors.pursuit(this, prey);
         return new Blend(this)
-            .add(Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("wolfAvoid"))
-            .add(chase, weights.get("pursuit"))
+            .add("Obstacle Avoidance", Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("wolfAvoid"))
+            .add(prey == null ? "Wander" : "Pursuit", chase, weights.get("pursuit"))
             .result();
     }
 

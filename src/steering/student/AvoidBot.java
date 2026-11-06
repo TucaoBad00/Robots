@@ -38,8 +38,8 @@ public class AvoidBot extends Robot {
             ? wander.calculate(this, world.getSecs())
             : Behaviors.arrive(this, click, 120);
         return new Blend(this)
-            .add(Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
-            .add(goal, weights.get("goal"))
+            .add("Obstacle Avoidance", Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
+            .add(click == null ? "Wander" : "Arrive", goal, weights.get("goal"))
             .result();
     }
 

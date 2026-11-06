@@ -48,11 +48,11 @@ public class PreyBot extends Robot {
         scared = !isZero(flee);
 
         final var blend = new Blend(this)
-            .add(Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
-            .add(flee, weights.get("flee"))
-            .add(Behaviors.separation(this, world.getNeighbors(60), 60), weights.get("separation"));
+            .add("Obstacle Avoidance", Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
+            .add("Flee", flee, weights.get("flee"))
+            .add("Separation", Behaviors.separation(this, world.getNeighbors(60), 60), weights.get("separation"));
         // Passeia devagar quando calmo: o wander só usa o orçamento que sobrar
-        if (!scared) blend.add(wander.calculate(this, world.getSecs()), weights.get("wander"));
+        if (!scared) blend.add("Wander", wander.calculate(this, world.getSecs()), weights.get("wander"));
         return blend.result();
     }
 

@@ -9,6 +9,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static steering.engine.Vector2.vec2;
@@ -47,7 +48,7 @@ final class Renderer {
     }
 
     static void render(Graphics2D g, Iso iso, Rectangle area, double arena, List<Robot> robots, Setup setup,
-                       Vector2 clickPos, Vector2 mousePos, boolean debug, double time) {
+                       Vector2 clickPos, Vector2 mousePos, boolean debug, boolean vectors, double time) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
@@ -84,9 +85,74 @@ final class Renderer {
         if (debug) {
             robots.forEach(robot -> robot.drawDebugOverlay(g, iso));
         }
+        if (vectors) {
+            robots.forEach(robot -> robot.drawVectorOverlay(g, iso));
+        }
 
-        drawHud(g, area, setup, debug);
+        drawHud(g, area, setup, debug, vectors);
         drawWeights(g, area, setup.getWeights());
+        if (vectors) drawVectorLegend(g, area, robots);
+    }
+
+    /** Legenda da camada de vetores (canto inferior esquerdo). */
+    private static void drawVectorLegend(Graphics2D g, Rectangle area, List<Robot> robots) {
+        final var legend = new LinkedHashMap<String, Color>();
+        var cut = false;
+        for (var robot : robots) {
+            robot.collectLegend(legend);
+            cut |= robot.hasCutForce();
+        }
+        final var lines = new ArrayList<String>();
+        if (legend.isEmpty()) lines.add("Nenhum vetor extra neste momento.");
+        final var notes = new ArrayList<String>();
+        if (legend.keySet().stream().anyMatch(k -> k.startsWith("Força:"))) {
+            notes.add("Forças na escala da seta laranja; tracejado = pedido cortado pelo orçamento"
+                + (cut ? "" : " (nenhum agora)"));
+        }
+        if (legend.containsKey("Velocidade desejada")) {
+            notes.add("Desejada na escala da seta azul: laranja = (desejada − azul) × 6");
+        }
+
+        g.setFont(TEXT);
+        final var fm = g.getFontMetrics();
+        var width = fm.stringWidth("Camada de vetores (V)") + 20;
+        for (var key : legend.keySet()) width = Math.max(width, fm.stringWidth(key) + 46);
+        for (var note : notes) width = Math.max(width, fm.stringWidth(note) + 24);
+        for (var line : lines) width = Math.max(width, fm.stringWidth(line) + 24);
+
+        final var rowH = 17;
+        final var height = 34 + (legend.size() + notes.size() + lines.size()) * rowH;
+        final var x = area.x + 14;
+        final var y = area.y + area.height - 38 - 12 - height;
+        panel(g, x, y, width, height);
+
+        g.setFont(TITLE.deriveFont(13f));
+        g.setColor(new Color(70, 55, 120));
+        g.drawString("Camada de vetores (V)", x + 12, y + 20);
+        g.setFont(TEXT);
+        var ry = y + 38;
+        for (var entry : legend.entrySet()) {
+            g.setColor(entry.getValue());
+            if (entry.getKey().startsWith("●")) {
+                g.fill(new java.awt.geom.Ellipse2D.Double(x + 18, ry - 8, 8, 8));
+            } else {
+                g.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.draw(new java.awt.geom.Line2D.Double(x + 12, ry - 4, x + 34, ry - 4));
+            }
+            g.setColor(new Color(80, 80, 105));
+            g.drawString(entry.getKey().replace("● ", ""), x + 42, ry);
+            ry += rowH;
+        }
+        g.setColor(new Color(120, 115, 145));
+        for (var line : lines) {
+            g.drawString(line, x + 12, ry);
+            ry += rowH;
+        }
+        g.setFont(SMALL);
+        for (var note : notes) {
+            g.drawString(note, x + 12, ry);
+            ry += rowH;
+        }
     }
 
     // =====================================================================
@@ -248,7 +314,7 @@ final class Renderer {
         return p;
     }
 
-    private static void drawHud(Graphics2D g, Rectangle area, Setup setup, boolean debug) {
+    private static void drawHud(Graphics2D g, Rectangle area, Setup setup, boolean debug, boolean vectors) {
         final var title = setup.getTitle();
         final var lines = setup.getDescription().split("\n");
 
@@ -274,7 +340,8 @@ final class Renderer {
             g.drawString(lines[i], x + 14, y + 46 + i * 17);
         }
 
-        final var bar = KEYS + "      D: debug " + (debug ? "ligado" : "desligado");
+        final var bar = KEYS + "      D: debug " + (debug ? "ligado" : "desligado")
+            + "   V: vetores " + (vectors ? "ligado" : "desligado");
         final var barW = textMetrics.stringWidth(bar) + 28;
         final var barX = area.x + (area.width - barW) / 2;
         final var barY = area.y + area.height - 38;

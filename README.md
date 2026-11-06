@@ -28,6 +28,7 @@ java -cp out steering.engine.Window
 |---|---|
 | `1` … `9` | Troca de cenário (apertar de novo reinicia) |
 | `D` | Liga/desliga o desenho de debug |
+| `V` | Liga/desliga a camada de vetores (independente do `D`) |
 | Clique no chão | Define o alvo (Seek, Arrive, Obstacle Avoidance) |
 | Mover o mouse | O cursor é a "ameaça" nos cenários de Flee e Presa |
 | `−` / `+` no painel de pesos | Ajusta o peso daquela linha em 0,1 (cenas 5, 7, 8 e 9) |
@@ -35,8 +36,22 @@ java -cp out steering.engine.Window
 | `←` `→` (ou `−` `+`) | Ajusta o peso escolhido em 0,1 (com `Shift`, em 0,5) |
 | `R` ou botão **Restaurar** | Volta todos os pesos da cena para o padrão |
 
-**Debug:** seta **azul** = velocidade, seta **laranja** = força de steering aplicada.
+**Debug (`D`):** seta **azul** = velocidade, seta **laranja** = força de steering aplicada.
 Cada comportamento também desenha suas informações: círculo do wander, caixa de detecção, alvo no caminho etc.
+
+**Camada de vetores (`V`):** mostra o que fica "escondido" dentro dessas duas setas. Uma legenda no
+canto inferior esquerdo lista o que está na tela.
+- **Velocidade desejada** (verde tracejada) nos robôs sem combinação, na mesma escala da seta azul.
+  A seta laranja é a correção `(desejada − azul) × 6`.
+- **Força de cada comportamento** nas combinações (cenas 5, 7, 8 e 9), cada um com sua cor e na
+  escala da seta laranja. Se o orçamento do `Blend` cortou parte da força, o pedido aparece
+  tracejado por trás. Por isso, dá para ver os pesos e a prioridade agindo enquanto mexe no painel.
+- **Pontos calculados:** a posição prevista da presa (Pursuit) e da ameaça (Evade), e a cadeia
+  previsão → projeção no caminho → alvo do Path Following.
+
+Esses vetores são registrados pelos próprios comportamentos enquanto calculam a força
+(`robot.debugDesired`, `robot.debugPoint` em `Behaviors`, `robot.debugForce` no `Blend`) e são
+apagados a cada quadro.
 
 ## Cenários
 

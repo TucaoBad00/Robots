@@ -3,6 +3,7 @@ package steering.student;
 import steering.engine.Robot;
 import steering.engine.Vector2;
 
+import java.awt.Color;
 import java.util.List;
 
 import static steering.engine.Vector2.*;
@@ -22,6 +23,12 @@ public final class Behaviors {
      */
     public static final double RESPONSE = 6.0;
 
+    // Cores dos pontos da camada de vetores (tecla V)
+    private static final Color PREDICTED_COLOR = new Color(200, 30, 60);
+    private static final Color FUTURE_COLOR = new Color(20, 150, 90);
+    private static final Color PROJECTION_COLOR = new Color(110, 110, 130);
+    private static final Color PATH_TARGET_COLOR = new Color(220, 60, 150);
+
     private Behaviors() {
     }
 
@@ -34,6 +41,7 @@ public final class Behaviors {
         final var desired = subtract(target, robot.getPosition());
         if (desired.isZero()) return vec2();
         desired.resize(robot.getMaxSpeed());
+        robot.debugDesired(desired);  // camada V: velocidade desejada
         return desired.subtract(robot.getVelocity()).multiply(RESPONSE);
     }
 
@@ -48,6 +56,7 @@ public final class Behaviors {
         if (panicRadius > 0 && distance > panicRadius) return vec2();
         if (desired.isZero()) desired.set(robot.getDirection().x, robot.getDirection().y);
         desired.resize(robot.getMaxSpeed());
+        robot.debugDesired(desired);  // camada V: velocidade desejada
         return desired.subtract(robot.getVelocity()).multiply(RESPONSE);
     }
 
@@ -58,10 +67,14 @@ public final class Behaviors {
     public static Vector2 arrive(Robot robot, Vector2 target, double slowingRadius) {
         final var toTarget = subtract(target, robot.getPosition());
         final var distance = toTarget.size();
-        if (distance < 2) return negate(robot.getVelocity()).multiply(RESPONSE); // chegou: anula a velocidade restante
+        if (distance < 2) {
+            robot.debugDesired(vec2());  // chegou: a velocidade desejada é zero
+            return negate(robot.getVelocity()).multiply(RESPONSE); // anula a velocidade restante
+        }
 
         final var speed = robot.getMaxSpeed() * Math.min(1.0, distance / slowingRadius);
         final var desired = toTarget.resize(speed);
+        robot.debugDesired(desired);  // camada V: velocidade desejada
         return desired.subtract(robot.getVelocity()).multiply(RESPONSE);
     }
 
@@ -78,13 +91,17 @@ public final class Behaviors {
 
     /** PURSUIT: faz seek na posição FUTURA estimada do alvo. */
     public static Vector2 pursuit(Robot robot, Robot target) {
-        return seek(robot, predictPosition(robot, target));
+        final var predicted = predictPosition(robot, target);
+        robot.debugPoint("Posição prevista da presa", predicted, target.getPosition(), PREDICTED_COLOR);
+        return seek(robot, predicted);
     }
 
     /** EVADE: faz flee da posição FUTURA estimada da ameaça. */
     public static Vector2 evade(Robot robot, Robot threat, double panicRadius) {
         if (Robot.distance(robot, threat) > panicRadius) return vec2();
-        return flee(robot, predictPosition(robot, threat), 0);
+        final var predicted = predictPosition(robot, threat);
+        robot.debugPoint("Posição prevista da ameaça", predicted, threat.getPosition(), PREDICTED_COLOR);
+        return flee(robot, predicted, 0);
     }
 
     /** Tempo de previsão proporcional à distância: quanto mais longe, mais à frente prevemos. */
@@ -213,7 +230,12 @@ public final class Behaviors {
     public static Vector2 pathTarget(Robot robot, Path path, double predictDistance, double lookAhead) {
         final var future = add(robot.getPosition(), multiply(robot.getDirection(), predictDistance));
         final var projection = path.project(future);
-        return path.pointAt(projection.distanceAlong() + lookAhead);
+        final var target = path.pointAt(projection.distanceAlong() + lookAhead);
+        // camada V: previsão → projeção no caminho → alvo
+        robot.debugPoint("Previsão (path)", future, robot.getPosition(), FUTURE_COLOR);
+        robot.debugPoint("Projeção no caminho", projection.point(), future, PROJECTION_COLOR);
+        robot.debugPoint("Alvo no caminho", target, projection.point(), PATH_TARGET_COLOR);
+        return target;
     }
 
     /** PATH FOLLOWING: seek no ponto-alvo que "anda" sempre à frente sobre o caminho. */

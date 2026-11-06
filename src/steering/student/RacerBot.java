@@ -49,9 +49,9 @@ public class RacerBot extends Robot {
     public Vector2 calculateSteering(World world) {
         target = Behaviors.pathTarget(this, path, 25, 70);
         return new Blend(this)
-            .add(Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
-            .add(Behaviors.separation(this, world.getNeighbors(55), 55), weights.get("separation"))
-            .add(Behaviors.seek(this, target), weights.get("path"))
+            .add("Obstacle Avoidance", Behaviors.avoidObstacles(this, obstacles, MIN_DETECTION), weights.get("avoid"))
+            .add("Separation", Behaviors.separation(this, world.getNeighbors(55), 55), weights.get("separation"))
+            .add("Path Following", Behaviors.seek(this, target), weights.get("path"))
             .result();
     }
 

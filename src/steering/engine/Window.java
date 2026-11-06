@@ -19,6 +19,7 @@ public final class Window extends JFrame implements Runnable {
     private volatile Vector2 clickPos = null;  // coordenadas de MUNDO (no chão)
     private volatile Vector2 mousePos = null;  // coordenadas de MUNDO (no chão)
     private volatile boolean debugMode = true;
+    private volatile boolean vectorMode = false; // camada de vetores extra (tecla V)
     private volatile Iso iso = new Iso(INITIAL_WIDTH / 2.0, INITIAL_HEIGHT / 2.0, 0.7);
     private final long startNanos = System.nanoTime();
 
@@ -86,6 +87,8 @@ public final class Window extends JFrame implements Runnable {
                 final var weights = setup.getWeights();
                 if (Character.toUpperCase(key) == 'D') {
                     debugMode = !debugMode;
+                } else if (Character.toUpperCase(key) == 'V') {
+                    vectorMode = !vectorMode;
                 } else if (Character.toUpperCase(key) == 'R') {
                     weights.reset();
                 } else if (key == '+' || key == '=') {
@@ -142,7 +145,7 @@ public final class Window extends JFrame implements Runnable {
                     do {
                         final var g2d = (Graphics2D) strategy.getDrawGraphics();
                         Renderer.render(g2d, frameIso, area, ARENA_SIZE, currentRobots, setup,
-                            clickPos, mousePos, debugMode, time);
+                            clickPos, mousePos, debugMode, vectorMode, time);
                         g2d.dispose();
                     } while (strategy.contentsRestored());
                     strategy.show();
